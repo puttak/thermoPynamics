@@ -2,21 +2,24 @@
 import numpy as np
 import sqlite3 as sqlite
 import openpyxl, os
+from databases.GetDataBaseDir import GetDataBaseDir
 
 class ReadData:
     def __init__(self, ID):
 
         self.ID = ID
+        originalDir = os.getcwd()
 
-        originalDirectory = os.getcwd()
         CPfile='idealGasCpData.db'
-        thisScript = os.path.abspath( __file__  )
-        thisDirectory = os.path.dirname(thisScript)
-        os.chdir(thisDirectory)
+        DBfileDir = GetDataBaseDir()
+        os.chdir(DBfileDir)
 
         self.conn = sqlite.connect(CPfile)
 
-        os.chdir(originalDirectory)
+        os.chdir(originalDir)
+
+
+
 
         self.__cursor = self.conn.cursor()
 

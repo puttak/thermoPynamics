@@ -2,7 +2,9 @@
 import numpy as np
 import sqlite3 as sql
 import os
+from databases.GetDataBaseDir import GetDataBaseDir
 
+#TODO: Os cálculos ainda não tem como usar PR.
 
 class ReadSqlData:
     def __init__(self, ID):
@@ -12,10 +14,8 @@ class ReadSqlData:
         originalDir = os.getcwd()
 
         fileName = 'pureComponentData.db'
-        thisScript = os.path.abspath(__file__)
-        thisDirectory = os.path.dirname(thisScript)
-        # fileName = os.path.join(thisDirectory,fileName)
-        os.chdir(thisDirectory)
+        DBfileDir = GetDataBaseDir()
+        os.chdir(DBfileDir)
         conector = sql.connect(fileName)
         os.chdir(originalDir)
 
