@@ -15,3 +15,10 @@
 2 - IDEAL (Ideal Gas Cp computation )
 
 3 - PR EoS (Z, fug. coef., residual enthalpy)
+
+4 - UNIFAC (act. coef.)
+
+References:
+Critical properties - Perry's Chemical Engineers Handbook, 8th edition.
+UNIFAC parameters - http://www.ddbst.com/published-parameters-unifac.html
+
