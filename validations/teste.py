@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from PR import PR
-from interface import Fluid, FluidData
+from ThermoPkgs.PR.PR import PR
+from ThermoPkgs.PR.interface import Fluid, FluidData
 fluido=Fluid(ID=[10], z=[1.0])
 dados=FluidData(fluido)
 co2=PR(fluido, dados)
