@@ -16,6 +16,8 @@ from getsqldata import ReadSqlData
 #         self.w=data.GetW()
 #         self.kij=data.GetEOSkij('SRK')
 
+#TODO: Renomar FluidData pra indicar que são dados de uma EoS e de qual EoS. Já que fdata vai ser específica pra uma EoS, não é necessário ter um indicador.
+
 class Fluid:
     def __init__(self, ID, z):
         self.ID = ID
