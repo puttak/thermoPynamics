@@ -16,7 +16,6 @@ import numpy as np
 # print eos.computeFUG(300, 1, 'vapor')
 #
 
-xi=np.array(range(11))
-li=np.array(range(11))
-print xi, li, xi*li
-print sum(xi*li)
+x=[1,4,9,16]
+
+print x[x.index(16)]

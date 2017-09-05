@@ -11,7 +11,8 @@ class FluiDataUNIFAC:
     def __init__(self,fluid):
         dataUNIFAC = ReadDataUNIFAC(fluid.ID)
 
-        dataUNIFAC.GetComponentGroupSpecification()
+        [self.NG, self.v, self.k, self.matrizG]=dataUNIFAC.GetComponentGroupSpecification()
+
 
 
 
