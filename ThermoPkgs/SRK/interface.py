@@ -1,3 +1,4 @@
+#coding: utf-8
 import numpy as np
 from getsqldata import ReadSqlData
 ##### Este arquivo contem as classes que atuam como interface, ou seja,  que entram como parametro na classe da EOS

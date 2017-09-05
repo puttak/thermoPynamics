@@ -1,6 +1,11 @@
 #coding: utf-8
 from databases.GetDataBaseDir import GetDataBaseDir
 from UNIFAC import UNIFAC
-print GetDataBaseDir()
-a=UNIFAC()
-print a.computeGama(300, [0.1])
+from interface import Fluid, FluiDataUNIFAC
+
+fluido = Fluid(ID=[342], z=[1.0])
+
+data = FluiDataUNIFAC(fluido)
+
+
+
