@@ -1,5 +1,6 @@
 #coding: utf-8
 import sqlite3 as sql
+import numpy as np
 import os
 from databases.GetDataBaseDir import GetDataBaseDir
 
@@ -14,12 +15,12 @@ class ReadDataUNIFAC:
         fileUNIFAC='GroupParametersUNIFAC.db'
         DBfileDir = GetDataBaseDir()
         os.chdir(DBfileDir)
-        conector = sql.connect(fileName)
-        conectorUNIFAC = sql.connect(fileUNIFAC)
+        self.conector = sql.connect(fileName)
+        self.conectorUNIFAC = sql.connect(fileUNIFAC)
         os.chdir(originalDir)
 
-        self.__cursor = conector.cursor()
-        self.cursorUNIFAC = conectorUNIFAC.cursor()
+        self.__cursor = self.conector.cursor()
+        self.cursorUNIFAC = self.conectorUNIFAC.cursor()
 
     def GetComponentGroupSpecification(self):
 
@@ -115,10 +116,66 @@ class ReadDataUNIFAC:
 
         return [NG, v, k, matrizG ]
 
-    def GetRandQ(self):
-        self.R=None
-        self.Q=None
-        return [self.R, self.Q]
+    def Get_r_and_q(self):
+        r=[]
+        q=[]
+        for sg_id in self.k:
+            self.cursorUNIFAC.execute('SELECT R, Q FROM subgroupParameters WHERE subgroupID=%d'%(sg_id))
+            row=self.cursorUNIFAC.fetchall()
+            r.append(row[0][0])
+            q.append(row[0][1])
+
+        return [r,q]
+
+    def GetMainGroup(self,sg_id):
+        for listinha in self.matrizG:
+            if sg_id in listinha[1]:
+                return listinha[0]
+        raise RuntimeError('Grupo principal do subgrupo %d não encontrado' % (sg_id))
+
+
+    def GetGroup_interaction_parameter(self):
+        a_m_n=np.zeros([self.NG, self.NG])
+        self.cursorUNIFAC.execute('SELECT A_i_j, A_j_i FROM interactionParametersUNIFAC WHERE groupID_i=%d and groupID_j=%d' % (1, 42))
+        row=self.cursorUNIFAC.fetchall()
+        #TODO: IMPORTANTE. NO BANCO DE DADOS, PROVAVELMENTE VOU INCORPORAR OS GASES LEVES EM OUTROS GRUPOS PRINCIPAIS, em vez de terem um exclusivo para eles.
+        #vou só percorrer a parte de cima da matriz NGxNG. E definir Amxn e Anxm. se eu não achar no DB ixj, tentar jxi. se não tiver ambor, é pq n tem no banco de dados.
+        #
+        for sg_i in self.k:
+            sg_j_list = [sg_j for sg_j in self.k if sg_j>sg_i]
+            main_i = self.GetMainGroup(sg_i)
+            for sg_j in sg_j_list:
+                main_j = self.GetMainGroup(sg_j)
+                if main_i==main_j:
+                    a_m_n[self.k.index(sg_i)][self.k.index(sg_j)]=0.0
+                    continue
+                # self.cursorUNIFAC.execute('SELECT A_i_j, A_j_i FROM interactionParametersUNIFAC WHERE '
+                #                           'groupID_i=%d and groupID_j=%d' % (main_i, main_j))
+                # row = self.cursorUNIFAC.fetchall()
+                # a_m_n[self.k.index(sg_i)][self.k.index(sg_j)] = row[0][0]
+                # a_m_n[self.k.index(sg_j)][self.k.index(sg_i)] = row[0][1]
+                try:
+
+                    self.cursorUNIFAC.execute('SELECT A_i_j, A_j_i FROM interactionParametersUNIFAC WHERE '
+                                              'groupID_i=%d and groupID_j=%d' % (main_i, main_j))
+                    row = self.cursorUNIFAC.fetchall()
+                    a_m_n[self.k.index(sg_i)][self.k.index(sg_j)] = row[0][0]
+                    a_m_n[self.k.index(sg_j)][self.k.index(sg_i)] = row[0][1]
+                except:
+                    try:
+                        self.cursorUNIFAC.execute('SELECT A_i_j, A_j_i FROM interactionParametersUNIFAC WHERE '
+                                                  'groupID_i=%d and groupID_j=%d' % (main_i, main_j))
+                        row = self.cursorUNIFAC.fetchall()
+                        a_m_n[self.k.index(sg_i)][self.k.index(sg_j)] = row[0][1]
+                        a_m_n[self.k.index(sg_j)][self.k.index(sg_i)] = row[0][0]
+                    except:
+
+                        raise ValueError('Parâmetro de interação dos grupos %d e %d não encontrados no banco de dados UNIFAC'
+                                         %(main_i, main_j))
+
+
+        print a_m_n
+        return a_m_n
 
 
 

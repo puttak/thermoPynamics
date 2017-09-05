@@ -17,5 +17,10 @@ import numpy as np
 #
 
 x=[1,4,9,16]
+y=['a', 'b', 'c', 'd']
 
-print x[x.index(16)]
+for i in x:
+    for j in y:
+        if j=='b':
+            continue
+        print i, j
