@@ -138,7 +138,7 @@ class ReadDataUNIFAC:
         a_m_n=np.zeros([self.NG, self.NG])
         self.cursorUNIFAC.execute('SELECT A_i_j, A_j_i FROM interactionParametersUNIFAC WHERE groupID_i=%d and groupID_j=%d' % (1, 42))
         row=self.cursorUNIFAC.fetchall()
-        #TODO: IMPORTANTE. NO BANCO DE DADOS, PROVAVELMENTE VOU INCORPORAR OS GASES LEVES EM OUTROS GRUPOS PRINCIPAIS, em vez de terem um exclusivo para eles.
+
         #vou só percorrer a parte de cima da matriz NGxNG. E definir Amxn e Anxm. se eu não achar no DB ixj, tentar jxi. se não tiver ambor, é pq n tem no banco de dados.
         #
         for sg_i in self.k:
@@ -149,11 +149,6 @@ class ReadDataUNIFAC:
                 if main_i==main_j:
                     a_m_n[self.k.index(sg_i)][self.k.index(sg_j)]=0.0
                     continue
-                # self.cursorUNIFAC.execute('SELECT A_i_j, A_j_i FROM interactionParametersUNIFAC WHERE '
-                #                           'groupID_i=%d and groupID_j=%d' % (main_i, main_j))
-                # row = self.cursorUNIFAC.fetchall()
-                # a_m_n[self.k.index(sg_i)][self.k.index(sg_j)] = row[0][0]
-                # a_m_n[self.k.index(sg_j)][self.k.index(sg_i)] = row[0][1]
                 try:
 
                     self.cursorUNIFAC.execute('SELECT A_i_j, A_j_i FROM interactionParametersUNIFAC WHERE '
@@ -164,7 +159,7 @@ class ReadDataUNIFAC:
                 except:
                     try:
                         self.cursorUNIFAC.execute('SELECT A_i_j, A_j_i FROM interactionParametersUNIFAC WHERE '
-                                                  'groupID_i=%d and groupID_j=%d' % (main_i, main_j))
+                                                  'groupID_i=%d and groupID_j=%d' % (main_j, main_i))
                         row = self.cursorUNIFAC.fetchall()
                         a_m_n[self.k.index(sg_i)][self.k.index(sg_j)] = row[0][1]
                         a_m_n[self.k.index(sg_j)][self.k.index(sg_i)] = row[0][0]
@@ -174,7 +169,6 @@ class ReadDataUNIFAC:
                                          %(main_i, main_j))
 
 
-        print a_m_n
         return a_m_n
 
 
