@@ -2,9 +2,9 @@
 import numpy as np
 from GetData import ReadDataUNIFAC
 class Fluid:
-    def __init__(self, ID, z):
+    def __init__(self, ID):
         self.ID = ID
-        self.z =  np.array(z)
+
 
 
 class FluiDataUNIFAC:
