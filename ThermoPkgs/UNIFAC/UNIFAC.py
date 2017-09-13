@@ -64,11 +64,43 @@ class UNIFAC:
 
         #GROUP ACTIVITY COEFFICIENT ln GAMMA_k
 
-        ln_GAMMA_k = self.__groupGamma(self.NC, self.NG, self.PSI_m_n, Xm, self.Q_k) #DA MISTURA
+        ln_GAMMA_k = self.__groupGamma( self.NG, self.PSI_m_n, Xm, self.Q_k) #DA MISTURA
 
         #COMPONENT GROUP ACTIVITY COEFFICIENT ln_GAMMA_k_i
 
         #TODO: Gerar os inputs de __groupGamma pra cada componente puro. Posso aporveitar as variáveis que acabei criando no unifacdata. Também importei o método GetMainGroup, se não precisar, só tirar.
+
+        self.NsG_i= [ ]
+        for i in self.ComponentsSubGroups:
+            self.NsG_i.append( len(i) )
+
+        PSI_m_n_i=[]
+
+        for i in range(self.NC):
+            PSI_m_n_i.append(np.zeros([self.NsG_i[i],self.NsG_i[i]]))
+
+
+        for i in range(self.NC):
+            for k1 in range(self.NsG_i[i]):
+                for k2 in range(self.NsG_i[i]):
+                    PSI_m_n_i[i][k1][k2] = \
+                        PSI_m_n[self.k.index(self.ComponentsSubGroups[i][k1])][self.k.index(self.ComponentsSubGroups[i][k2])]
+
+        X_i_k=[]
+        Q_k_i=[]
+        for i in range(self.NC):
+            X = []
+            Q=[]
+            for c_sg in self.ComponentsSubGroups[i]:
+                X.append(float(self.v[i][self.k.index(c_sg)]) / sum(self.v[i]) )
+                Q.append(self.Q_k[self.k.index(c_sg)])
+            X_i_k.append(X)
+            Q_k_i.append(Q)
+
+        ln_GAMMA_i_k=[]
+        for i in range(self.NC):
+            ln_GAMMA_i_k.append(self.__groupGamma(self.NsG_i[i], PSI_m_n_i[i], X_i_k[i], Q_k_i[i]))
+        print ln_GAMMA_i_k #TODO: CONFERIR SE OS VALORES ESTÃO CERTOS COM O LIVRO. DAI PASSAR PRA CALCULAR O GAMMA RESIDUAL
         ln_residual_gamma_i=[]
         matrix_component_group_gamma_k=self.__component_group_gamma_k()
 
@@ -81,8 +113,8 @@ class UNIFAC:
                 # print ln_GAMMA_k[kk], '=ln_GAMMA_k', matrix_component_group_gamma_k[i][kk], '=matrix_component_group_gamma_k'
             ln_residual_gamma_i.append(soma)
 
-    def __groupGamma(self, NC, NG, PSI_m_n, Xm, Q_k):
-
+    def __groupGamma(self, NG, PSI_m_n, Xm, Q_k):
+        Xm=np.array(Xm)
         produto_m = Q_k * Xm
         TETAm = produto_m/sum(produto_m)
 
@@ -110,8 +142,8 @@ class UNIFAC:
 
 
 
-        for kk in range(self.NG):
-            ln_GAMMA_k.append(self.Q_k[kk] * (1 - ln_SOMA_TETAm_vezes_PSImk_k[kk] - sum_ratio_teta_times_PSI_k[kk]))
+        for kk in range(NG):
+            ln_GAMMA_k.append(Q_k[kk] * (1 - ln_SOMA_TETAm_vezes_PSImk_k[kk] - sum_ratio_teta_times_PSI_k[kk]))
 
         return ln_GAMMA_k
 

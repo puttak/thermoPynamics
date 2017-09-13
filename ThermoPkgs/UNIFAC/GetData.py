@@ -117,6 +117,7 @@ class ReadDataUNIFAC:
         self.k = k
         self.matrizG = matrizG
         self.subGroupsOfEachComponent=componentK
+
         self.NG_i=[]
         for i in range(self.NC):
             lista=[]
@@ -126,7 +127,7 @@ class ReadDataUNIFAC:
             lista=list(set(tuple(lista)))
             self.NG_i.append(len(lista))
 
-        return [NG, v, k, matrizG,componentK, self.NG_i ]
+        return [NG, v, self.k, matrizG,componentK, self.NG_i ]
 
     def Get_r_and_q(self):
         R_k=[]
