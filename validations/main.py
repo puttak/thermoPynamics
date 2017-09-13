@@ -15,12 +15,12 @@ import numpy as np
 #
 # print eos.computeFUG(300, 1, 'vapor')
 #
+x=[0.0, 0,0,1.0]
 
-x=[4,1,9,16]
-y=[1,0, -1, 0.5]
+for i in range(len(x)):
+    if x[i] == 0:
+        x[i] = 1E-12
+        for ii in range(len(x)):
+            x[ii]=x[ii]/sum(x)
 
-print sorted(zip(y,x))
-
-y_s = [j for i,j in sorted(zip(x,y))]
-
-print y_s
+print x

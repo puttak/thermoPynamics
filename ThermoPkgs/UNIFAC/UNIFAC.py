@@ -1,8 +1,6 @@
 #coding: utf-8
 import numpy as np
 
-##ACREDITO QUE JA TODOS OS DADOS NECESSÁRIOS JA ESTÃO SENDO PÊGOS NO BANCO DE DADOS. AGORA JÁ É POSSÍVEL INICIAR OS CÁLCULOS.
-
 class UNIFAC:
     def __init__(self, fluid, unifacdata):
 
@@ -30,13 +28,18 @@ class UNIFAC:
         self.ComponentsSubGroups=unifacdata.ComponentsSubGroups
         self.NG_i = unifacdata.NG_i
 
-
-
     def computeGama(self, T, x):
 
 
         assert sum(x)==1
         assert len(x) == self.NC
+
+        for i in range(len(x)):
+            if x[i] == 0:
+                x[i] = 1E-12
+                for ii in range(len(x)):
+                    x[ii] = x[ii] / sum(x)
+
         x = np.array(x)
 
         PSI_m_n = np.exp(-self.a_m_n/T)
@@ -127,6 +130,7 @@ class UNIFAC:
         lnGamma_i=[]
         for i in range(self.NC):
             lnGamma_i.append(ln_g_c_i[i]+ln_g_r_i[i])
+
         return lnGamma_i
 
     def __groupGamma(self, NG, PSI_m_n, Xm, Q_k):
@@ -164,75 +168,6 @@ class UNIFAC:
         return ln_GAMMA_k
 
 
-    def __component_group_gamma_k(self):
 
 
-        #TODO: DELETAR ESSE MÉTODO. TALVEZ APROVEITE ALGO DELE.
-        matriz_total=[]
-        for i in range(self.NC):
-            matriz_grupo=[]
-            if self.NG_i[i]==1:
-                matriz_grupo=[0.0 for i in range(self.NG)]
-                matriz_total.append(matriz_grupo)
-                continue
 
-            X_i_k=[]
-            for kk in range(self.NG):
-                matriz_grupo.append(1.0)
-                X_i_k.append(float(self.v[i][kk]) / sum(self.v[i]) )
-
-            TETA_m_i = []
-            X_i_k=np.array(X_i_k)
-
-            for k_2 in range(self.NG):
-                if self.v[i][k_2] == 0:
-                    TETA_m_i.append(0.0)
-                    continue
-                TETA_m_i.append(self.Q_k[k_2]*X_i_k[k_2]/sum(self.Q_k*X_i_k))
-
-            SOMA_TETAm_vezes_PSImk_k = []
-            ln_SOMA_TETAm_vezes_PSImk_k = []
-            sum_ratio_teta_times_PSI_k = []
-
-
-            for k_2 in range(self.NG):
-                if self.v[i][k_2] == 0:
-                    ln_SOMA_TETAm_vezes_PSImk_k.append(0.0)
-                    sum_ratio_teta_times_PSI_k.append(0.0)
-                    continue
-
-                soma_k = 0.0
-                for m in range(self.NG):
-                    if self.v[i][m] == 0:
-                        continue
-                    soma_k += TETA_m_i[m] * self.PSI_m_n[m][k_2]
-
-                SOMA_TETAm_vezes_PSImk_k.append(soma_k)
-                ln_SOMA_TETAm_vezes_PSImk_k.append(np.log(soma_k))
-
-                sum_ratio_k = 0.0
-                for m in range(self.NG):
-                    if self.v[i][m] == 0:
-                        continue
-                    # print TETA_m_i[m], self.PSI_m_n[m][k_2], soma_k
-                    sum_ratio_k += TETA_m_i[m] * self.PSI_m_n[m][k_2] / soma_k
-
-                sum_ratio_teta_times_PSI_k.append(sum_ratio_k)
-
-            # print ln_SOMA_TETAm_vezes_PSImk_k, sum_ratio_teta_times_PSI_k
-
-            for k_2 in range(self.NG):
-                if self.v[i][k_2] == 0:
-                    matriz_grupo.append(0.0)
-                    continue
-                matriz_grupo.append(self.Q_k[k_2]*(1-ln_SOMA_TETAm_vezes_PSImk_k[k_2]-sum_ratio_teta_times_PSI_k[k_2])  )
-
-            matriz_total.append(matriz_grupo)
-
-        return matriz_total
-
-    def __GetMainGroup(self,sg_id):
-        for listinha in self.matrizG:
-            if sg_id in listinha[1]:
-                return listinha[0]
-        raise RuntimeError('Grupo principal do subgrupo %d não encontrado' % (sg_id))
