@@ -16,11 +16,11 @@ import numpy as np
 # print eos.computeFUG(300, 1, 'vapor')
 #
 
-x=[1,4,9,16]
-y=['a', 'b', 'c', 'd']
+x=[4,1,9,16]
+y=[1,0, -1, 0.5]
 
-for i in x:
-    for j in y:
-        if j=='b':
-            continue
-        print i, j
+print sorted(zip(y,x))
+
+y_s = [j for i,j in sorted(zip(x,y))]
+
+print y_s

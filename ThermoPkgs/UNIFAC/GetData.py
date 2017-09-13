@@ -50,6 +50,7 @@ class ReadDataUNIFAC:
             except:
                 raise ValueError('componente %d não tem parâmetros do UNIFAC especificados no banco de dados' % (id))
 
+            #TODO: reordenar os elementos de row[i][0] e row[i][2] com base em row[i][1]. Talvez melhor fazer com as listas de baixo.
             ki = []
             v_k_i=[]
             for dados_de_id in row:
@@ -58,6 +59,10 @@ class ReadDataUNIFAC:
                 v_k_i.append(dados_de_id[2])
             k.append(ki)
             v_k.append(v_k_i)
+
+        for i in range(self.NC):
+            v_k[i]=[xx for yy,xx in sorted(zip(k[i],v_k[i]))]
+            k[i].sort()
 
         componentK = list(k)
         noduplicate_k=[]
@@ -110,6 +115,8 @@ class ReadDataUNIFAC:
             g2=[n for n in g2 if type(n)==int]
             g.append(g2)
             matrizG.append(g)
+
+
 
 
         self.NG = NG

@@ -61,14 +61,28 @@ class UNIFAC:
 
         produto_m = self.Q_k * Xm
         TETAm = produto_m/sum(produto_m)
+        #COMBINATORIAL
 
+        ln_g_c_i=[]
+        li=[]
+        for i in range(self.NC):
+            li.append(5*(r_component[i]-q_component[i])-(r_component[i]-1))
+
+        for i in range(self.NC):
+            termo1=np.log(FI_component_seg_fraction[i]/x[i])
+            termo2=5*q_component[i]*np.log(Q_area_component_fraction[i]/FI_component_seg_fraction[i])
+            termo3=li[i]
+            termo4=-FI_component_seg_fraction[i]/x[i]*sum(x*li)
+            ln_g_c_i.append(termo1+termo2+termo3+termo4)
+
+        #RESIDUAL
         #GROUP ACTIVITY COEFFICIENT ln GAMMA_k
 
         ln_GAMMA_k = self.__groupGamma( self.NG, self.PSI_m_n, Xm, self.Q_k) #DA MISTURA
 
         #COMPONENT GROUP ACTIVITY COEFFICIENT ln_GAMMA_k_i
 
-        #TODO: Gerar os inputs de __groupGamma pra cada componente puro. Posso aporveitar as variáveis que acabei criando no unifacdata. Também importei o método GetMainGroup, se não precisar, só tirar.
+
 
         self.NsG_i= [ ]
         for i in self.ComponentsSubGroups:
@@ -100,18 +114,20 @@ class UNIFAC:
         ln_GAMMA_i_k=[]
         for i in range(self.NC):
             ln_GAMMA_i_k.append(self.__groupGamma(self.NsG_i[i], PSI_m_n_i[i], X_i_k[i], Q_k_i[i]))
-        print ln_GAMMA_i_k #TODO: CONFERIR SE OS VALORES ESTÃO CERTOS COM O LIVRO. DAI PASSAR PRA CALCULAR O GAMMA RESIDUAL
-        ln_residual_gamma_i=[]
-        matrix_component_group_gamma_k=self.__component_group_gamma_k()
 
+
+
+        ln_g_r_i=[]
+
+        for ii in range(self.NC):
+            soma = 0.0
+            for kk in range(self.NsG_i[ii]):
+                soma+=self.v[ii][self.k.index(self.ComponentsSubGroups[ii][kk])]*(ln_GAMMA_k[self.k.index(self.ComponentsSubGroups[ii][kk])]-ln_GAMMA_i_k[ii][kk])
+            ln_g_r_i.append(soma)
+        lnGamma_i=[]
         for i in range(self.NC):
-            soma=0.0
-            for kk in range(self.NG):
-                # if self.v[i][kk]==0:
-                #     continue
-                soma+=self.v[i][kk]*(ln_GAMMA_k[kk]- matrix_component_group_gamma_k[i][kk])
-                # print ln_GAMMA_k[kk], '=ln_GAMMA_k', matrix_component_group_gamma_k[i][kk], '=matrix_component_group_gamma_k'
-            ln_residual_gamma_i.append(soma)
+            lnGamma_i.append(ln_g_c_i[i]+ln_g_r_i[i])
+        return lnGamma_i
 
     def __groupGamma(self, NG, PSI_m_n, Xm, Q_k):
         Xm=np.array(Xm)
