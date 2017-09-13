@@ -59,11 +59,14 @@ class ReadDataUNIFAC:
             k.append(ki)
             v_k.append(v_k_i)
 
-
+        componentK = list(k)
         noduplicate_k=[]
         for ki in k:
             noduplicate_k =noduplicate_k+ki
 
+        # for l in range( len(v_k) ):
+        #     v_k[l]= tuple(v_k[l])
+        # v_k=tuple(v_k)
         noduplicate_k=tuple( noduplicate_k )
         noduplicate_k = list (set ( noduplicate_k))
 
@@ -113,19 +116,28 @@ class ReadDataUNIFAC:
         self.v = v
         self.k = k
         self.matrizG = matrizG
+        self.subGroupsOfEachComponent=componentK
+        self.NG_i=[]
+        for i in range(self.NC):
+            lista=[]
+            for k in componentK[i]:
+                lista.append(self.GetMainGroup(k))
 
-        return [NG, v, k, matrizG ]
+            lista=list(set(tuple(lista)))
+            self.NG_i.append(len(lista))
+
+        return [NG, v, k, matrizG,componentK, self.NG_i ]
 
     def Get_r_and_q(self):
-        r=[]
-        q=[]
+        R_k=[]
+        Q_k=[]
         for sg_id in self.k:
             self.cursorUNIFAC.execute('SELECT R, Q FROM subgroupParameters WHERE subgroupID=%d'%(sg_id))
             row=self.cursorUNIFAC.fetchall()
-            r.append(row[0][0])
-            q.append(row[0][1])
+            R_k.append(row[0][0])
+            Q_k.append(row[0][1])
 
-        return [r,q]
+        return [R_k,Q_k]
 
     def GetMainGroup(self,sg_id):
         for listinha in self.matrizG:
