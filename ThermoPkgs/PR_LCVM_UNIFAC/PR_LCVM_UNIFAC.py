@@ -5,14 +5,17 @@
 #Volume cm3
 #Qtde de materia g-mol
 
-
 import numpy as np
+from ThermoPkgs.UNIFAC.UNIFAC import UNIFAC
 
-class PR:
 
-    def __init__(self,fluid, fluidData):
+class PR_LCVM_UNIFAC:
+
+    def __init__(self,fluid, fluidData, unifacdata):
 
         self.R = 83.144621  # bar.cm3/(mol.K)
+        self.PARAMETER_LAMBA_LCVM = 0.36
+        self.lamb=self.PARAMETER_LAMBA_LCVM
 
         try:
             self.ID = fluid.ID
@@ -45,12 +48,7 @@ class PR:
             assert type(self.w) == np.ndarray
         except:
             raise ValueError('w não definido corretamente na instancia fluidData')
-        try:
-            self.kij = fluidData.kij
-            assert type(self.kij) == np.ndarray
-        except:
-            raise ValueError('kij não definido corretamente na instancia fluidData')
-
+        self.unifac=UNIFAC(fluid,unifacdata)
 
     def computeFUG(self,T,P,Phase):
 
@@ -65,7 +63,7 @@ class PR:
 
         localZ=self.computeZ(T, P,Phase)
 
-        fugCoefficient=self.FUG(localZ)
+        fugCoefficient=self.FUG(localZ,T)
 
         return fugCoefficient
 
@@ -108,8 +106,8 @@ class PR:
 
 
     def EOS(self, T, P):
-        # EOS_SRK pode ser chamado por um método que ajeite as entradas. De modo que quando for add uma EOS, apenas por as equações.
-        #Ok
+        # TODO: IMPORTANTE. VALIDAR CALCULO DO Z (VOLUME MOLAR)
+
         ai=0.45724*self.R**2*self.Tc**2/self.Pc #Ok
         bi=0.07780*self.R*self.Tc/self.Pc  #Ok
         self.ai_aaa=ai
@@ -120,29 +118,44 @@ class PR:
         self.aiT=aci
         self.biT=bi
 
-        ncomp=int(len(self.z))
-        aij=np.zeros((ncomp,ncomp))
-        for i in range(ncomp):
-            for j in range(ncomp):
-                expression1=(aci[i]*aci[j])**0.5
-                expression1=expression1*(1-self.kij[i][j])
-                aij[i][j]=expression1
-        ac=0.0
-        b=0.0
-        for i in range(ncomp):
-            b+= self.z[i] * bi[i]
-            for j in range(ncomp):
-                expression1= self.z[i] * self.z[j] * aij[i][j]
-                ac+=expression1
 
-        self.aijSRK=aij
-        self.aSRK=ac
-        self.bSRK=b
-        A=ac*P/(self.R*T)**2
-        B=b*P/(self.R*T)
+        ncomp=int(len(self.z))
+
+        bm=0.0
+        for i in range(ncomp):
+            bm+= self.z[i] * bi[i]
+
+        Av=0.623
+        Am=-0.52
+
+        self.Av=Av
+        self.Am=Am
+
+        gamma = self.unifac.computeGama(T,self.z)
+        self.gamma = gamma
+
+        ge_RT=0.0
+        for i in range(ncomp):
+            ge_RT+=self.z[i]*np.log(gamma[i])
+        termo1=(self.lamb/Av+(1-self.lamb)/Am)*ge_RT
+        soma2=0.0
+        termo3=0.0
+        for i in range(ncomp):
+            soma2+=self.z[i]*np.log(bm/bi[i])
+            termo3+=self.z[i]*ai[i]/(bi[i]*self.R*T)
+        termo2=(1-self.lamb)/Am*soma2
+
+        alfaLCVM=termo1+termo2+termo3
+
+        am=alfaLCVM*bm*self.R*T
+
+
+        self.aSRK=am
+        self.bSRK=bm
+        A=am*P/(self.R*T)**2
+        B=bm*P/(self.R*T)
         self.A_SRK=A
         self.B_SRK=B
-
 
         c3=1
         c2=-1*(1-B)
@@ -152,26 +165,31 @@ class PR:
         return [c3,c2,c1,c0]
 
 
-    def FUG(self, localZ):
-
+    def FUG(self, localZ,T):
+        #TODO: MUDAR FUG
         #Ok
         A=self.A_SRK
         B=self.B_SRK
-        CoFug=[]
-        AX=-np.log(localZ-B)
-        BX=(A/(2**1.5*B))*np.log((localZ+B*(2**0.5+1))/(localZ-B*(2**0.5-1)))
-        for k in range(self.NC):
-            soma=0.0
-            for i in range(self.NC):
-                soma=soma+self.z[i]*self.aijSRK[i][k]
-            S=soma*2.0/self.aSRK - self.biT[k] / self.bSRK
-            AP=(localZ-1.0)*self.biT[k] / self.bSRK + AX - S * BX
-            CoFug.append(AP)
+        bi=self.biT
+        ai=self.aiT
+        bm=self.bSRK
+        lamb=self.lamb
+        Av=self.Av
+        Am=self.Am
+        gamma=self.gamma
 
+        CoFug=[]
+        for i in range(self.NC):
+            termo1=bi[i]/bm*(localZ-1)
+            termo2=-np.log(localZ-B)
+
+            d_alfa_i=( lamb/Av + (1-lamb)/Am )*np.log( gamma[i] )
+            d_alfa_i+=(1-lamb)/Am*(np.log(bm/bi[i]) + bi[i]/bm - 1)
+            d_alfa_i+=ai[i]/(bi[i]*self.R*T)
+            termo3_b=np.log( ( localZ+B*(1+2**0.5) )/ ( localZ+B*(1-2**0.5) )  )
+            termo3=-(1/2**1.5)*d_alfa_i*termo3_b
+
+            CoFug.append(termo1+termo2+termo3)
         CoFug=np.exp(CoFug)
 
-
         return CoFug
-
-
-

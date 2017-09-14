@@ -50,7 +50,7 @@ class ReadDataUNIFAC:
             except:
                 raise ValueError('componente %d não tem parâmetros do UNIFAC especificados no banco de dados' % (id))
 
-            #TODO: reordenar os elementos de row[i][0] e row[i][2] com base em row[i][1]. Talvez melhor fazer com as listas de baixo.
+
             ki = []
             v_k_i=[]
             for dados_de_id in row:

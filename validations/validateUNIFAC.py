@@ -33,7 +33,7 @@ for x in x1:
         P.append(pvap194)
         continue
 
-    g=np.exp(a.computeGama(T, [x,1-x]))
+    g=a.computeGama(T, [x,1-x])
     p=x*g[0]*pvap194+(1-x)*g[1]*pvap342
 
     y.append(x*g[0]*pvap194/p)

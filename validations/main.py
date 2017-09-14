@@ -15,12 +15,7 @@ import numpy as np
 #
 # print eos.computeFUG(300, 1, 'vapor')
 #
-x=[0.0, 0,0,1.0]
+a=[1,2,3]
+b=[4,5,6]
 
-for i in range(len(x)):
-    if x[i] == 0:
-        x[i] = 1E-12
-        for ii in range(len(x)):
-            x[ii]=x[ii]/sum(x)
-
-print x
+print a + b

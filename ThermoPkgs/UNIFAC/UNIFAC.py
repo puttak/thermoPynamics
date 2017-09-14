@@ -31,7 +31,7 @@ class UNIFAC:
     def computeGama(self, T, x):
 
 
-        assert sum(x)==1
+        assert sum(x)-1.0<1.0e-5
         assert len(x) == self.NC
 
         for i in range(len(x)):
@@ -127,11 +127,11 @@ class UNIFAC:
             for kk in range(self.NsG_i[ii]):
                 soma+=self.v[ii][self.k.index(self.ComponentsSubGroups[ii][kk])]*(ln_GAMMA_k[self.k.index(self.ComponentsSubGroups[ii][kk])]-ln_GAMMA_i_k[ii][kk])
             ln_g_r_i.append(soma)
-        lnGamma_i=[]
+        Gamma_i=[]
         for i in range(self.NC):
-            lnGamma_i.append(ln_g_c_i[i]+ln_g_r_i[i])
+            Gamma_i.append(np.exp(ln_g_c_i[i]+ln_g_r_i[i]))
 
-        return lnGamma_i
+        return Gamma_i
 
     def __groupGamma(self, NG, PSI_m_n, Xm, Q_k):
         Xm=np.array(Xm)
