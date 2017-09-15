@@ -1,5 +1,5 @@
-from PR_LCVM_UNIFAC import PR_LCVM_UNIFAC
-from interface import Fluid, FluidData
+from ThermoPkgs.PR_LCVM_UNIFAC.PR_LCVM_UNIFAC import PR_LCVM_UNIFAC
+from ThermoPkgs.PR_LCVM_UNIFAC.interface import Fluid, FluidData
 from ThermoPkgs.UNIFAC.interface import FluiDataUNIFAC
 import scipy.optimize as opt
 import numpy as np

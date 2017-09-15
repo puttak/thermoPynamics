@@ -12,8 +12,8 @@ start = time.time()
 fluido = Fluid(ID=[194,342])
 
 data = FluiDataUNIFAC(fluido)
-a=UNIFAC(fluido, data)
 
+a=UNIFAC(fluido, data)
 
 
 T=50+273.15
