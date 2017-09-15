@@ -19,16 +19,9 @@ class SRK:
         try:
             self.ID = fluid.ID
             assert type(self.ID) == list
+            self.NC = len(self.ID)
         except:
             raise ValueError('ID não definido corretamente na instancia fluid')
-
-        try:
-            self.z = fluid.z
-            assert type(self.z) == np.ndarray
-        except:
-            raise ValueError('z não definido corretamente na instancia fluid')
-
-        self.NC = len(self.z)
 
         assert self.NC == len(self.ID)
 
@@ -54,7 +47,16 @@ class SRK:
             raise ValueError('kij não definido corretamente na instancia fluidData')
 
 
-    def computeFUG(self,T,P,Phase):
+    def computeFUG(self,T,P,z,Phase):
+
+        if type(z)==list:
+            z=np.array(z)
+
+        try:
+            assert type(z) == np.ndarray
+            assert self.NC == len(self.ID)
+        except:
+            raise ValueError('z não definido corretamente em computeFUG')
         try:
             assert type(T) in [float, np.float64, np.float16, np.float32, int]
         except:
@@ -65,13 +67,24 @@ class SRK:
             raise ValueError('Erro em computeFUG. P deve ser do tipo float')
 
 
-        localZ=self.computeZ(T, P,Phase)
+        localZ=self.computeZ(T, P, z, Phase)
 
-        fugCoefficient=self.FUG(localZ)
+        fugCoefficient=self.FUG(localZ,z)
 
         return fugCoefficient
 
-    def computeZ(self, T, P,Phase):
+    def computeZ(self, T, P,z,Phase):
+
+        if type(z)==list:
+            z=np.array(z)
+
+        try:
+            assert type(z) == np.ndarray
+            assert self.NC == len(self.ID)
+
+        except:
+            raise ValueError('z não definido corretamente em computeZ')
+
         try:
             assert type(T) in [float, np.float64, np.float16, np.float32, int]
         except:
@@ -82,7 +95,7 @@ class SRK:
             raise ValueError('Erro em computeZ. P deve ser do tipo float')
 
 
-        c=self.EOS(T,P)
+        c=self._EOS(T, P,z)
         p=np.poly1d(c)
 
         allZvalues=np.roots(p)
@@ -111,7 +124,7 @@ class SRK:
         return Z
 
 
-    def EOS(self, T, P):
+    def _EOS(self, T, P,z):
         # EOS_SRK pode ser chamado por um método que ajeite as entradas. De modo que quando for add uma EOS, apenas por as equações.
 
         #Ok
@@ -125,7 +138,7 @@ class SRK:
         self.aiSRK=aci
         self.biSRK=bi
 
-        ncomp=int(len(self.z))
+        ncomp=int(len(z))
         aij=np.zeros((ncomp,ncomp))
         for i in range(ncomp):
             for j in range(ncomp):
@@ -135,9 +148,9 @@ class SRK:
         ac=0.0
         b=0.0
         for i in range(ncomp):
-            b+= self.z[i] * bi[i]
+            b+= z[i] * bi[i]
             for j in range(ncomp):
-                expression1= self.z[i] * self.z[j] * aij[i][j]
+                expression1= z[i] * z[j] * aij[i][j]
                 ac+=expression1
 
         self.aijSRK=aij
@@ -156,7 +169,7 @@ class SRK:
         return [c3,c2,c1,c0]
 
 
-    def FUG(self, localZ):
+    def FUG(self, localZ,z):
         #Ok
         A=self.A_SRK
         B=self.B_SRK
@@ -166,7 +179,7 @@ class SRK:
         for k in range(self.NC):
             soma=0.0
             for i in range(self.NC):
-                soma=soma+self.z[i]*self.aijSRK[i][k]
+                soma=soma+z[i]*self.aijSRK[i][k]
             S=soma*2.0/self.aSRK - self.biSRK[k]/self.bSRK
             AP=(localZ-1.0)*self.biSRK[k]/self.bSRK + AX - S*BX
             CoFug.append(AP)

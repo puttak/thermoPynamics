@@ -20,18 +20,9 @@ class PR_LCVM_UNIFAC:
         try:
             self.ID = fluid.ID
             assert type(self.ID) == list
+            self.NC = len(self.ID)
         except:
             raise ValueError('ID não definido corretamente na instancia fluid')
-
-        try:
-            self.z = fluid.z
-            assert type(self.z) == np.ndarray
-        except:
-            raise ValueError('z não definido corretamente na instancia fluid')
-
-        self.NC = len(self.z)
-
-        assert self.NC == len(self.ID)
 
         try:
             self.Tc = fluidData.Tc
@@ -50,7 +41,23 @@ class PR_LCVM_UNIFAC:
             raise ValueError('w não definido corretamente na instancia fluidData')
         self.unifac=UNIFAC(fluid,unifacdata)
 
-    def computeFUG(self,T,P,Phase):
+    def computeFUG(self,T,P,z,Phase):
+
+        if type(z)==list:
+            z=np.array(z)
+
+        try:
+            assert type(z) == np.ndarray
+            assert self.NC == len(self.ID)
+        except:
+            raise ValueError('z não definido corretamente em computeFUG')
+
+        for i in range(self.NC):
+            if z[i] == 0:
+                z[i] = 1E-12
+        for i in range(self.NC):
+            z[i] = z[i] / sum(z)
+
 
         try:
             assert type(T) in [float, np.float64, np.float16, np.float32, int]
@@ -61,13 +68,19 @@ class PR_LCVM_UNIFAC:
         except:
             raise ValueError('Erro em computeFUG. P deve ser do tipo float')
 
-        localZ=self.computeZ(T, P,Phase)
+        localZ=self.computeZ(T, P,z,Phase)
 
-        fugCoefficient=self.FUG(localZ,T)
+        fugCoefficient=self._FUG(localZ, T,z)
 
         return fugCoefficient
 
-    def computeZ(self, T, P,Phase):
+    def computeZ(self, T, P,z,Phase):
+
+        for i in range(len(z)):
+            if z[i] == 0:
+                z[i] = 1E-12
+        for i in range(self.NC):
+            z[i] = z[i] / sum(z)
 
         try:
             assert type(T) in [float, np.float64, np.float16, np.float32, int]
@@ -78,7 +91,7 @@ class PR_LCVM_UNIFAC:
         except:
             raise ValueError('Erro em computeZ. P deve ser do tipo float')
 
-        p=np.poly1d(self.EOS(T,P))
+        p=np.poly1d(self._EOS(T, P,z))
         allZvalues=np.roots(p)
 
         # Remove raizes complexas
@@ -105,7 +118,7 @@ class PR_LCVM_UNIFAC:
         return Z
 
 
-    def EOS(self, T, P):
+    def _EOS(self, T, P,z):
         # TODO: IMPORTANTE. VALIDAR CALCULO DO Z (VOLUME MOLAR)
 
         ai=0.45724*self.R**2*self.Tc**2/self.Pc #Ok
@@ -119,11 +132,11 @@ class PR_LCVM_UNIFAC:
         self.biT=bi
 
 
-        ncomp=int(len(self.z))
+        ncomp=self.NC
 
         bm=0.0
         for i in range(ncomp):
-            bm+= self.z[i] * bi[i]
+            bm+= z[i] * bi[i]
 
         Av=0.623
         Am=-0.52
@@ -131,18 +144,18 @@ class PR_LCVM_UNIFAC:
         self.Av=Av
         self.Am=Am
 
-        gamma = self.unifac.computeGama(T,self.z)
+        gamma = self.unifac.computeGama(T,z)
         self.gamma = gamma
 
         ge_RT=0.0
         for i in range(ncomp):
-            ge_RT+=self.z[i]*np.log(gamma[i])
+            ge_RT+=z[i]*np.log(gamma[i])
         termo1=(self.lamb/Av+(1-self.lamb)/Am)*ge_RT
         soma2=0.0
         termo3=0.0
         for i in range(ncomp):
-            soma2+=self.z[i]*np.log(bm/bi[i])
-            termo3+=self.z[i]*ai[i]/(bi[i]*self.R*T)
+            soma2+=z[i]*np.log(bm/bi[i])
+            termo3+=z[i]*ai[i]/(bi[i]*self.R*T)
         termo2=(1-self.lamb)/Am*soma2
 
         alfaLCVM=termo1+termo2+termo3
@@ -165,8 +178,8 @@ class PR_LCVM_UNIFAC:
         return [c3,c2,c1,c0]
 
 
-    def FUG(self, localZ,T):
-        #TODO: MUDAR FUG
+    def _FUG(self, localZ, T,z):
+
         #Ok
         A=self.A_SRK
         B=self.B_SRK

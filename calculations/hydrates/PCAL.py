@@ -5,7 +5,7 @@ from numpy import exp as EXP
 import scipy.optimize as sciopt
 import warnings
 import ThermoPkgs.SRK.SRK as tmp
-from ThermoPkgs.SRK.interface import FluidData, Fluid
+from ThermoPkgs.SRK.interfaceSRK import FluidDataSRK, FluidSRK
 import GetInputPCALSQL as GetInput
 import GetDataPCALSQL as GetData
 
@@ -29,7 +29,6 @@ class PCAL:
 
 
 
-
     def computePD(self,T, Pguess):
 
         self.T = float(T)
@@ -37,8 +36,8 @@ class PCAL:
         P=Pguess
         P = P * 1.01325
 
-        fluid=Fluid(ID=self.InputPCAL.ID, z=self.InputPCAL.y)
-        fluidData = FluidData(fluid)
+        fluid=FluidSRK(ID=self.InputPCAL.ID)
+        fluidData = FluidDataSRK(fluid)
         self.faseVapor = tmp.SRK(fluid, fluidData)
 
         P = P / 1.01325
@@ -137,7 +136,7 @@ class PCAL:
         except: pass
 
         P = P * 1.01325 #Transformação pra bar.
-        self.PHV = self.faseVapor.computeFUG(self.T, P, 'vapor')
+        self.PHV = self.faseVapor.computeFUG(self.T, P, self.InputPCAL.y,'vapor')
         P = P / 1.01325  #Volta pra atm.
 
         SC = [0.0, 0.0]

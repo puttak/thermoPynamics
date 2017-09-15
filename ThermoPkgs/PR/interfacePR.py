@@ -16,17 +16,11 @@ from getsqldata import ReadSqlData
 #         self.w=data.GetW()
 #         self.kij=data.GetEOSkij('SRK')
 
-class Fluid:
-    def __init__(self, ID, z):
+class FluidPR:
+    def __init__(self, ID):
         self.ID = ID
-        for i in range(len(z)):
-            if z[i] == 0:
-                z[i] = 1E-12
-                for ii in range(len(z)):
-                    z[ii] = z[ii] / sum(z)
-        self.z =  np.array(z)
 
-class FluidData:
+class FluidDataPR:
     def __init__(self, fluid):
 
         data=ReadSqlData(fluid.ID)
@@ -35,4 +29,6 @@ class FluidData:
         self.Tc=critical[0]
         self.Pc=critical[1]
         self.w=critical[2]
+        self.kij=data.GetEOSkij('PR')
+
         self.Name=data.GetName()

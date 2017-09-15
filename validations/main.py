@@ -1,6 +1,6 @@
 #coding: utf-8
 from ThermoPkgs.PR.PR import PR
-from ThermoPkgs.PR.interface import FluidData, Fluid
+from ThermoPkgs.PR.interfacePR import FluidDataPR, FluidPR
 import numpy as np
 ##############
 ## Aqui será colocado os testes em geral. Validações são adicionadas separadamente quando um novo módulo é terminado. ####
