@@ -21,7 +21,7 @@ class Ideal:
         CP=0.0
         for i in range(self.NC):
             a0 = float( coefs[0][i])
-            a1 = float(coefs[1][i])    #TODO: Fazer leitura a partir do excel. Tem que rolar um scrap no livro do prausnitiz
+            a1 = float(coefs[1][i])
             a2 = float(coefs[2][i])
             a3 = float(coefs[3][i])
             a4 = float(coefs[4][i])

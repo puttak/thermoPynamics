@@ -2,7 +2,7 @@
 import numpy as np
 import scipy.optimize as scyopt
 import ThermoPkgs.SRK.SRK as tmp
-from ThermoPkgs.SRK.interface import FluidData, Fluid
+from ThermoPkgs.SRK.interfaceSRK import FluidDataSRK, FluidSRK
 from ThermoPkgs.IDEAL.Ideal import Ideal
 
 
@@ -32,8 +32,8 @@ class JT:
             raise ValueError('Problema nos inputs de JT')
         ################################################################################################################
 
-        fluid = Fluid(self.ID, self.y)
-        fluidData = FluidData(fluid)
+        fluid = FluidSRK(self.ID)
+        fluidData = FluidDataSRK(fluid)
         #TODO: por um if que escolhe o modelo. passar computeHR para o arquivo da EoS.
         self.thermoObj = tmp.SRK( fluid, fluidData)
 
@@ -55,7 +55,7 @@ class JT:
 
 
     def computeResidualEnthalpy(self, T, P):
-        Z = self.thermoObj.computeZ(T=T, P=P, Phase=self.fase)
+        Z = self.thermoObj.computeZ(T=T, P=P,z=self.y ,Phase=self.fase)
         Tr = T/self.thermoObj.Tc[0]
         m = 0.480 + 1.574 * self.thermoObj.w[0] - 0.176 * self.thermoObj.w[0] ** 2
         a=self.thermoObj.ai_aaa[0]
