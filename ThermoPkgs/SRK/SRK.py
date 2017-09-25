@@ -69,7 +69,7 @@ class SRK:
 
         localZ=self.computeZ(T, P, z, Phase)
 
-        fugCoefficient=self.FUG(localZ,z)
+        fugCoefficient=self._FUG(localZ, z)
 
         return fugCoefficient
 
@@ -127,6 +127,7 @@ class SRK:
     def _EOS(self, T, P,z):
         # EOS_SRK pode ser chamado por um método que ajeite as entradas. De modo que quando for add uma EOS, apenas por as equações.
 
+
         #Ok
         ai=0.42747*self.R**2*self.Tc**2/self.Pc #Ok
         bi=0.08664*self.R*self.Tc/self.Pc  #Ok
@@ -137,6 +138,8 @@ class SRK:
         aci=ai*alfaT
         self.aiSRK=aci
         self.biSRK=bi
+
+
 
         ncomp=int(len(z))
         aij=np.zeros((ncomp,ncomp))
@@ -166,10 +169,19 @@ class SRK:
         c2=-1
         c1=A-B-B**2
         c0=-A*B
+        #Variáveis que saem por self. ficaram aqui:
+        self.a = ac
+        self.b = b
+        self.m = m
+        self.ai = aci
+        self.aci = ai
+        self.alfaT = alfaT
+
+
         return [c3,c2,c1,c0]
 
 
-    def FUG(self, localZ,z):
+    def _FUG(self, localZ, z):
         #Ok
         A=self.A_SRK
         B=self.B_SRK
@@ -188,6 +200,55 @@ class SRK:
 
 
         return CoFug
+
+
+    def computeResidualEnthalpy(self,T,P,z, Phase):
+        Z = self.computeZ(T, P, z, Phase)
+        ac_i = self.aci
+        alfaT_i = self.alfaT
+        a_i = self.ai
+        a_T = self.a
+        b=self.b
+        v = Z*self.R*T/P
+        m_i = self.m
+        Tc_i = self.Tc
+        k_i_j = self.kij
+
+        dadT_i =[]
+        for i in range(self.NC):
+            termo1=ac_i[i]*alfaT_i[i]**0.5
+            termo2=-m_i[i]*(T/Tc_i[i])**0.5/T
+            dadT_i.append(termo1*termo2)
+
+        dadT = 0.0
+
+        for i in range(self.NC):
+            for j in range(self.NC):
+                dadT+=(dadT_i[i]*dadT_i[j])**0.5*z[i]*z[j]*(1-k_i_j[i][j])
+
+        parcela1 = (a_T - T * dadT) / b
+        HR = self.R * T * (1 - Z) + parcela1 * np.log(1 + b / v)
+
+        return HR
+
+
+
+
+
+    # def transposicao(self, T, P):
+    #     Z = self.thermoObj.computeZ(T=T, P=P,z=self.y ,Phase=self.fase)
+    #     Tr = T/self.thermoObj.Tc[0]
+    #     m = 0.480 + 1.574 * self.thermoObj.w[0] - 0.176 * self.thermoObj.w[0] ** 2
+    #     a=self.thermoObj.ai_aaa[0]
+    #     alfaT = (1 + m * (1 - (T / self.thermoObj.Tc[0]) ** 0.5)) ** 2
+    #     dadT = a*(alfaT)**0.5*(-m*Tr**0.5/T)
+    #     b=self.thermoObj.bSRK
+    #     v=Z*self.R*T/P
+    #     parcela1 = (a-T*dadT)/b
+    #     HR = self.R*T*(1-Z) + parcela1*np.log(1+b/v)
+    #
+    #     return HR
+
 
 
 
