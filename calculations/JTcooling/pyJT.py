@@ -1,9 +1,8 @@
 #coding: utf-8
 import numpy as np
 import scipy.optimize as scyopt
-import ThermoPkgs.SRK.SRK as tmp
-from ThermoPkgs.SRK.interfaceSRK import FluidDataSRK, FluidSRK
 from ThermoPkgs.IDEAL.Ideal import Ideal
+
 
 
 class JT:
@@ -16,7 +15,7 @@ class JT:
         self.T1 = float(T1)
         self.P1 = float(P1)
 
-        self.modelosSuportados = ['SRK']
+        self.modelosSuportados = ['SRK', 'PR']
         self.ID = ID
         self.NC = len(ID)
         self.y  = y
@@ -30,12 +29,23 @@ class JT:
             assert bol1
         except:
             raise ValueError('Problema nos inputs de JT')
-        ################################################################################################################
 
-        fluid = FluidSRK(self.ID)
-        fluidData = FluidDataSRK(fluid)
-        #TODO: por um if que escolhe o modelo. passar computeHR para o arquivo da EoS.
-        self.thermoObj = tmp.SRK( fluid, fluidData)
+        assert flagEOS in self.modelosSuportados
+        ################################################################################################################
+        if flagEOS == 'SRK':
+            import ThermoPkgs.SRK.SRK as tmp
+            from ThermoPkgs.SRK.interfaceSRK import FluidDataSRK, FluidSRK
+            fluid = FluidSRK(self.ID)
+            fluidData = FluidDataSRK(fluid)
+            self.thermoObj = tmp.SRK(fluid, fluidData)
+        elif flagEOS == 'PR':
+            import ThermoPkgs.PR.PR as tmp
+            from ThermoPkgs.PR.interfacePR import FluidPR, FluidDataPR
+            fluid = FluidPR(self.ID)
+            fluidData = FluidDataPR(fluid)
+            self.thermoObj = tmp.PR(fluid, fluidData)
+        else:
+            raise RuntimeError('EOS %s not supported yet in JT' % (flagEOS))
 
         self.R = self.thermoObj.R
         self.CPobject = Ideal (self.ID, self.y, self.R)
@@ -43,8 +53,7 @@ class JT:
 
     def computeT2(self, P2,T2guess=None):
         self.P2=float(P2)
-
-        self.HR1 = self.computeResidualEnthalpy(T=self.T1, P=self.P1)
+        self.HR1 = self.thermoObj.computeResidualEnthalpy(self.T1,self.P1, self.y, self.fase)
 
         if T2guess==None:
             CPt1 = self.CPobject.computeCP(self.T1)
@@ -53,28 +62,10 @@ class JT:
         return raiz
 
 
-
-    def computeResidualEnthalpy(self, T, P):
-        Z = self.thermoObj.computeZ(T=T, P=P,z=self.y ,Phase=self.fase)
-        Tr = T/self.thermoObj.Tc[0]
-        m = 0.480 + 1.574 * self.thermoObj.w[0] - 0.176 * self.thermoObj.w[0] ** 2
-        a=self.thermoObj.ai_aaa[0]
-        alfaT = (1 + m * (1 - (T / self.thermoObj.Tc[0]) ** 0.5)) ** 2
-        dadT = a*(alfaT)**0.5*(-m*Tr**0.5/T)
-        b=self.thermoObj.bSRK
-        v=Z*self.R*T/P
-        parcela1 = (a-T*dadT)/b
-        HR = self.R*T*(1-Z) + parcela1*np.log(1+b/v)
-
-        return HR
-
-
     def fT2(self, T2):
         integralCp = self.CPobject.computeMeanCP(Tlower=self.T1, Tupper=T2)*(T2-self.T1)
-
-        HR2 = self.computeResidualEnthalpy(T=T2, P=self.P2)
+        HR2 = self.thermoObj.computeResidualEnthalpy(T2,self.P2,self.y,self.fase)
         f = integralCp + self.HR1 - HR2
-
         return f
 
 
