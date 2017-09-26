@@ -220,11 +220,16 @@ class SRK:
             termo2=-m_i[i]*(T/Tc_i[i])**0.5/T
             dadT_i.append(termo1*termo2)
 
+        del termo2
+        del termo1
+
         dadT = 0.0
 
         for i in range(self.NC):
             for j in range(self.NC):
-                dadT+=(dadT_i[i]*dadT_i[j])**0.5*z[i]*z[j]*(1-k_i_j[i][j])
+                termo1 = z[i]*z[j]*(1-k_i_j[i][j])
+                termo2 = dadT_i[i]*(a_i[j]/a_i[i])**0.5/2+dadT_i[j]*(a_i[i]/a_i[j])**0.5/2
+                dadT+=termo1*termo2
 
         parcela1 = (a_T - T * dadT) / b
         HR = self.R * T * (1 - Z) + parcela1 * np.log(1 + b / v)
@@ -234,20 +239,6 @@ class SRK:
 
 
 
-
-    # def transposicao(self, T, P):
-    #     Z = self.thermoObj.computeZ(T=T, P=P,z=self.y ,Phase=self.fase)
-    #     Tr = T/self.thermoObj.Tc[0]
-    #     m = 0.480 + 1.574 * self.thermoObj.w[0] - 0.176 * self.thermoObj.w[0] ** 2
-    #     a=self.thermoObj.ai_aaa[0]
-    #     alfaT = (1 + m * (1 - (T / self.thermoObj.Tc[0]) ** 0.5)) ** 2
-    #     dadT = a*(alfaT)**0.5*(-m*Tr**0.5/T)
-    #     b=self.thermoObj.bSRK
-    #     v=Z*self.R*T/P
-    #     parcela1 = (a-T*dadT)/b
-    #     HR = self.R*T*(1-Z) + parcela1*np.log(1+b/v)
-    #
-    #     return HR
 
 
 
