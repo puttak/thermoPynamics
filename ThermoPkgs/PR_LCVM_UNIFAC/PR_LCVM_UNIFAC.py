@@ -4,7 +4,7 @@
 #Pressao bar
 #Volume cm3
 #Qtde de materia g-mol
-
+import scipy.integrate as scint
 import numpy as np
 from ThermoPkgs.UNIFAC.UNIFAC import UNIFAC
 
@@ -207,3 +207,13 @@ class PR_LCVM_UNIFAC:
         CoFug=np.exp(CoFug)
 
         return CoFug
+
+    def computeHR_numerical(self,T,P,z,Phase):
+        self.tolHR = 1E-9
+        tol = self.tolHR*T
+
+        dZdT_P = lambda P_lambda: (tol*P_lambda) ** -1 * (self.computeZ(T + tol, P_lambda, z, Phase) - self.computeZ(T, P_lambda, z, Phase))
+        [HR,erro_inegral] =  scint.quad(dZdT_P, 0, P)
+        HR = self.R * T ** 2 *HR
+        assert erro_inegral<1E-2
+        return HR

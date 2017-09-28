@@ -10,6 +10,7 @@ import numpy as np
 import scipy.integrate as scint
 
 
+
 class SRK:
 
     def __init__(self,fluid, fluidData):
@@ -237,13 +238,15 @@ class SRK:
         return HR
 
     def computeHR_numerical(self,T,P,z,Phase):
-
         self.tolHR = 1E-9
         tol = self.tolHR*T
 
         dZdT_P = lambda P_lambda: (tol*P_lambda) ** -1 * (self.computeZ(T + tol, P_lambda, z, Phase) - self.computeZ(T, P_lambda, z, Phase))
+        [HR,erro_inegral] =  scint.quad(dZdT_P, 0, P)
+        HR = self.R * T ** 2 *HR
+        assert erro_inegral<1E-2
+        return HR
 
-        print -self.R*T**2*scint.quad(dZdT_P,0,P)[0]
 
 
 
