@@ -4,18 +4,13 @@ from numpy import log as ALOG
 from numpy import exp as EXP
 import scipy.optimize as sciopt
 import warnings
-import ThermoPkgs.SRK.SRK as tmp
-from ThermoPkgs.SRK.interfaceSRK import FluidDataSRK, FluidSRK
 import GetInputPCALSQL as GetInput
 import GetDataPCALSQL as GetData
 
-
 class PCAL:
-    def __init__(self,ID, y, isThereInib=None, InibID=None,InibMassFraction=None, flagEOS=None):
+    def __init__(self,ID, y, isThereInib=None, InibID=None,InibMassFraction=None, flagEOS='SRK', flagGamma = None):
 
         self.InputPCAL = GetInput.GetInputPCAL(ID, y, isThereInib, InibID,InibMassFraction, flagEOS)
-        if isThereInib==1:
-            assert self.InputPCAL.InibID == [194]  # Por enquanto só funciona para o metanol.
 
         self.HydrateDataSet = GetData.GetDataPCAL(self.InputPCAL)
 
@@ -27,7 +22,52 @@ class PCAL:
                 self.HydrateDataSet.EP[indice] = 203.31
                 self.HydrateDataSet.SIG[indice] = 3.30931
 
+        self.flagGamma = flagGamma
+        if flagEOS=='SRK':
+            import ThermoPkgs.SRK.SRK as tmp
+            from ThermoPkgs.SRK.interfaceSRK import FluidDataSRK, FluidSRK
+            fluid = FluidSRK(ID=self.InputPCAL.ID)
+            fluidData = FluidDataSRK(fluid)
+            self.faseVapor = tmp.SRK(fluid, fluidData)
+        elif flagEOS=='PR':
+            import ThermoPkgs.PR.PR as tmp
+            from ThermoPkgs.PR.interfacePR import FluidDataPR, FluidPR
+            fluid = FluidPR(ID=self.InputPCAL.ID)
+            fluidData = FluidDataPR(fluid)
+            self.faseVapor = tmp.PR(fluid, fluidData)
+        elif flagEOS=='PRLCVMUNIFAC':
+            import ThermoPkgs.PR_LCVM_UNIFAC.PR_LCVM_UNIFAC as tmp
+            from ThermoPkgs.PR_LCVM_UNIFAC.interfacePRLCVMUNIFAC import FluidPRLCVMUNIFAC, FluidDataPRLCVMUNIFAC
+            from ThermoPkgs.UNIFAC.interface import FluiDataUNIFAC
+            fluid = FluidPRLCVMUNIFAC(ID=self.InputPCAL.ID)
+            fluidData = FluidDataPRLCVMUNIFAC(fluid)
+            unifacdata = FluiDataUNIFAC(fluid)
+            self.faseVapor = tmp.PR_LCVM_UNIFAC(fluid, fluidData, unifacdata)
+        elif flagEOS=='PRLCVMmodUNIFAC':
+            import ThermoPkgs.PR_LCVM_modUNIFAC.PR_LCVM_UNIFAC as tmp
+            from ThermoPkgs.PR_LCVM_modUNIFAC.interfacePRLCVMUNIFAC import FluidPRLCVMUNIFAC, FluidDataPRLCVMUNIFAC
+            from ThermoPkgs.modUNIFAC.interface import FluiDataUNIFAC
+            fluid = FluidPRLCVMUNIFAC(ID=self.InputPCAL.ID)
+            fluidData = FluidDataPRLCVMUNIFAC(fluid)
+            unifacdata = FluiDataUNIFAC(fluid)
+            self.faseVapor = tmp.PR_LCVM_UNIFAC(fluid, fluidData, unifacdata)
+        else:
+            raise RuntimeError('EOS model not supported')
 
+        if flagGamma=='UNIFAC':
+            from ThermoPkgs.UNIFAC.UNIFAC import UNIFAC
+            from ThermoPkgs.UNIFAC.interface import Fluid, FluiDataUNIFAC
+            fluidounifac = Fluid(self.InputPCAL.IDaqPHASE)
+            unifacdata = FluiDataUNIFAC(fluidounifac)
+            self.GammaModel = UNIFAC(fluidounifac, unifacdata)
+        elif flagGamma == 'modUNIFAC':
+            from ThermoPkgs.modUNIFAC.UNIFAC import UNIFAC
+            from ThermoPkgs.modUNIFAC.interface import Fluid, FluiDataUNIFAC
+            fluidounifac = Fluid(self.InputPCAL.IDaqPHASE)
+            unifacdata = FluiDataUNIFAC(fluidounifac)
+            self.GammaModel = UNIFAC(fluidounifac, unifacdata)
+        else:
+            assert flagGamma==None
 
     def computePD(self,T, Pguess):
 
@@ -36,9 +76,7 @@ class PCAL:
         P=Pguess
         P = P * 1.01325
 
-        fluid=FluidSRK(ID=self.InputPCAL.ID)
-        fluidData = FluidDataSRK(fluid)
-        self.faseVapor = tmp.SRK(fluid, fluidData)
+
 
         P = P / 1.01325
 
@@ -252,12 +290,19 @@ class PCAL:
 
 
         if self.InputPCAL.isThereInib == True:
-            xMet = self.InputPCAL.XaqPHASE[-1]
-            self.TICE = self.TICE -xMet*(93.622+xMet*(528.971-xMet*(5275.-xMet*(30491.3-xMet*61414.))))-.01056
-            if T >= self.TICE:
-                GAMA = 1.9462 * ((273.16 / self.TICE) - 1.0) - 4.5920 * np.log(273.16 / self.TICE)
-                GAMA = np.exp(GAMA)
-                GAMA = GAMA / (1.0 - xMet)
+            if self.InputPCAL.InibID == [194] and self.flagGamma == None:
+                xMet = self.InputPCAL.XaqPHASE[-1]
+                self.TICE = self.TICE - xMet * (
+                93.622 + xMet * (528.971 - xMet * (5275. - xMet * (30491.3 - xMet * 61414.)))) - .01056
+                if T >= self.TICE:
+                    GAMA = 1.9462 * ((273.16 / self.TICE) - 1.0) - 4.5920 * np.log(273.16 / self.TICE)
+                    GAMA = np.exp(GAMA)
+                    GAMA = GAMA / (1.0 - xMet)
+            elif self.flagGamma == None:
+                raise RuntimeError('You must define a gamma model in order to use a inibihtor different from Methaol')
+
+
+
 
         self.GAMA = float(GAMA)
         self.InputPCAL.XaqPHASE = 1*self.InputPCAL.XaqPHASEwithoutGas
@@ -272,6 +317,11 @@ class PCAL:
                 GasSolub = np.exp(correlacao)
                 self.InputPCAL.XaqPHASE[i]=float(GasSolub)
                 self.InputPCAL.XaqPHASE[self.InputPCAL.IDaqPHASE.index(self.InputPCAL.idwater)] += - GasSolub
+
+        if self.flagGamma != None:
+            self.GAMA = self.GammaModel.computeGama(T, self.InputPCAL.XaqPHASE)
+            self.GAMA = self.GAMA [ self.InputPCAL.IDaqPHASE.index(self.InputPCAL.idwater)]
+
 
         self.lnA = np.log( self.GAMA*self.InputPCAL.XaqPHASE[self.InputPCAL.IDaqPHASE.index(self.InputPCAL.idwater)]  )
         return

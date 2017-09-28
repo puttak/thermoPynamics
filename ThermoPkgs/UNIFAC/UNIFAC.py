@@ -12,9 +12,6 @@ class UNIFAC:
         except:
             raise ValueError('ID não definido corretamente na instancia fluid')
 
-
-        #TODO: Add conferir entradas.
-
         self.NC = len(self.ID)
 
         self.NG = unifacdata.NG
