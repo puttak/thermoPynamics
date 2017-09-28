@@ -7,7 +7,7 @@
 
 
 import numpy as np
-
+import scipy.integrate as scint
 
 
 class SRK:
@@ -235,6 +235,16 @@ class SRK:
         HR = self.R * T * (1 - Z) + parcela1 * np.log(1 + b / v)
 
         return HR
+
+    def computeHR_numerical(self,T,P,z,Phase):
+
+        self.tolHR = 1E-9
+        tol = self.tolHR*T
+
+        dZdT_P = lambda P_lambda: (tol*P_lambda) ** -1 * (self.computeZ(T + tol, P_lambda, z, Phase) - self.computeZ(T, P_lambda, z, Phase))
+
+        print -self.R*T**2*scint.quad(dZdT_P,0,P)[0]
+
 
 
 
