@@ -1,8 +1,9 @@
 #coding: utf-8
-import numpy as np
 import scipy.optimize as scyopt
+import numpy as np
 from ThermoPkgs.IDEAL.Ideal import Ideal
-
+import matplotlib.pyplot as plt
+import datetime
 
 
 class JT:
@@ -128,8 +129,55 @@ class JT:
 
 
 
+class PlotIsenthalpic:
+    def __init__(self, ID, T1,P1,z, Phase, flagEOS):
+
+        self.ID = ID
+        self.T1 = T1
+        self.P1 = P1
+        self.z = z
+        self.Phase = Phase
+        self.flagEOS = flagEOS
+        self.JTinstance = JT(self.T1, self.P1, self.ID, self.z, self.Phase, self.flagEOS)
+
+    def figura(self, Plimits, NumberOfPoints = 10):
+        assert type(Plimits)== list
+        assert len(Plimits) == 2
+
+        Pmin = min(Plimits)
+        Pmax = max(Plimits)
+
+        Pvec = np.linspace(Pmin, Pmax, NumberOfPoints)
+
+        Tvec = []
 
 
+        for p in Pvec:
+            T2 = self.JTinstance.computeT2(p, self.T1)
+            Tvec.append(T2)
+
+
+        figura = plt.figure()
+        plt.plot(Tvec, Pvec)
+        return figura
+
+    def plot(self, Plimits, NumberOfPoints = 10):
+        f = self.figura(Plimits, NumberOfPoints)
+        plt.show()
+
+    def saveFig(self, Plimits, NumberOfPoints = 10):
+        f = self.figura(Plimits, NumberOfPoints)
+
+        now = datetime.datetime.now()
+        tempo = [now.year, now.month, now.day, now.hour, now.minute, now.second]
+        stringa = ''
+        for s in tempo:
+            stringa = stringa + str(s) + '_'
+        stringa = stringa[:-1]
+        import calculations.outputfiles.GetoutputPath
+        pat = calculations.outputfiles.GetoutputPath.thisPath()
+        fileName = pat+stringa + 'isenthalPic.png'
+        plt.savefig(fileName)
 
 
 

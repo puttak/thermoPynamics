@@ -5,8 +5,7 @@ from calculations.hydrates.PCAL import PCAL
 from calculations.JTcooling.pyJT import JT
 import numpy as np
 
-
-
+###Compute maximum pressure drop to avoid hydrate formation
 
 class maxDeltaP:
     def __init__(self,T1,P1,ID,y):
@@ -42,5 +41,7 @@ class maxDeltaP:
     def solve(self,Xguess):
         xraiz=opt.fsolve(self.sistema,Xguess)
         return xraiz
+
+
 
 
