@@ -5,6 +5,7 @@
 #Volume cm3
 #Qtde de materia g-mol
 import numpy as np
+import scipy.integrate as scint
 
 
 class PR:
@@ -156,6 +157,14 @@ class PR:
         c1=A-2*B-3*B**2
         c0=-1*(A*B-B**2-B**3)
 
+        #Variáveis que saem por self. ficaram aqui:
+        self.a = ac
+        self.b = b
+        self.m = m
+        self.ai = aci
+        self.aci = ai
+        self.alfaT = alfaT
+
         return [c3,c2,c1,c0]
 
 
@@ -179,5 +188,49 @@ class PR:
 
         return CoFug
 
+    def computeResidualEnthalpy(self,T,P,z, Phase):
+        Z = self.computeZ(T, P, z, Phase)
+        ac_i = self.aci
+        alfaT_i = self.alfaT
+        a_i = self.ai
+        a_T = self.a
+        b=self.b
+        v = Z*self.R*T/P
+        m_i = self.m
+        Tc_i = self.Tc
+        k_i_j = self.kij
+
+        dadT_i =[]
+        for i in range(self.NC):
+            termo1=ac_i[i]*alfaT_i[i]**0.5
+            termo2=-m_i[i]*(T/Tc_i[i])**0.5/T
+            dadT_i.append(termo1*termo2)
+
+        del termo2
+        del termo1
+
+        dadT = 0.0
+
+        for i in range(self.NC):
+            for j in range(self.NC):
+                termo1 = z[i]*z[j]*(1-k_i_j[i][j])
+                termo2 = dadT_i[i]*(a_i[j]/a_i[i])**0.5/2+dadT_i[j]*(a_i[i]/a_i[j])**0.5/2
+                dadT+=termo1*termo2
+
+        parcela1 = (a_T - T * dadT) / (2*b*2**0.5)
+        dentroLn = (v + b + b*2**0.5) / (v+b-b*2**0.5)
+        HR = self.R * T * (1 - Z) + parcela1 * np.log(dentroLn)
+
+        return HR
+
+    def computeHR_numerical(self,T,P,z,Phase):
+        self.tolHR = 1E-9
+        tol = self.tolHR*T
+
+        dZdT_P = lambda P_lambda: (tol*P_lambda) ** -1 * (self.computeZ(T + tol, P_lambda, z, Phase) - self.computeZ(T, P_lambda, z, Phase))
+        [HR,erro_inegral] =  scint.quad(dZdT_P, 0, P)
+        HR = self.R * T ** 2 *HR
+        assert erro_inegral<1E-2
+        return HR
 
 
