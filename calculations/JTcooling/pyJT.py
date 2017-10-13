@@ -118,12 +118,28 @@ class JT:
             CPt1 = self.CPobject.computeCP(self.T1)
             T2guess=self.T1 + self.HR1/CPt1
         raiz = scyopt.newton(self.fT2, T2guess)
+        del self.P2
         return raiz
 
 
     def fT2(self, T2):
         integralCp = self.CPobject.computeMeanCP(Tlower=self.T1, Tupper=T2)*(T2-self.T1)
         HR2 = self.HRfunc(T2,self.P2,self.y,self.fase)
+        f = integralCp + self.HR1 - HR2
+        return f
+
+    def computeP2(self, T2, P2guess = None):
+        self.T2=float(T2)
+        self.HR1 = self.HRfunc(self.T1,self.P1, self.y, self.fase)
+        if P2guess==None:
+            P2guess = self.P1*0.8
+        raiz = scyopt.newton(self.fP2, P2guess)
+        del self.T2
+        return raiz
+
+    def fP2(self,P2):
+        integralCp = self.CPobject.computeMeanCP(Tlower=self.T1, Tupper=self.T2)*(self.T2-self.T1)
+        HR2 = self.HRfunc(self.T2,P2,self.y,self.fase)
         f = integralCp + self.HR1 - HR2
         return f
 
@@ -178,7 +194,3 @@ class PlotIsenthalpic:
         pat = calculations.outputfiles.GetoutputPath.thisPath()
         fileName = pat+stringa + 'isenthalPic.png'
         plt.savefig(fileName)
-
-
-
-

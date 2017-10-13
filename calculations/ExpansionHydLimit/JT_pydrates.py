@@ -43,5 +43,31 @@ class maxDeltaP:
         return xraiz
 
 
+class PlotHydLimit:
+    def __init__(self, isotherms, P1initial, P1final, ID,y, NumberOfPoints=20):
+        #Isotherms: ...List... contains the temperature which will be used in calculations.
+
+        assert type(isotherms) in [list, np.ndarray]
+
+        self.isotherms = isotherms
+
+        assert type(P1final) in [int, float]
+        self.P1final = P1final
+        assert type(P1initial) in [int, float]
+        self.P1initial = P1initial
+        self.NumberOfIsotherms = len(isotherms)
+
+        self.P1vector = np.linspace(P1initial, P1final, NumberOfPoints)
+
+
+    def computeValues(self):
+
+        all_P2x=[]
+
+        # for T in self.isotherms:
+            #TODO:Computar os valores de P2 aqui inserindo P1
+
+
+
 
 
